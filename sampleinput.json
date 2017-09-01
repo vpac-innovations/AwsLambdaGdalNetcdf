@@ -1,0 +1,4 @@
+{
+  "s3Bucket": "lambda-geospatial-test-data",
+  "s3Key": "road-network/RoadNetwork_tile_x9_y23.nc"
+}
