@@ -31,15 +31,47 @@ Download and build proj.4
     make install
     cd ..
 
-Download and build OpenSSL. This is used to provide SSL/HTTPS support in the CURL lib.
+Download and build OpenSSL. This is used to provide SSL/HTTPS support in the curl lib.
 
     wget https://www.openssl.org/source/openssl-1.0.2l.tar.gz
     tar xvf openssl-1.0.2l.tar.gz
+    cd openssl-1.0.2l
     ./config  --prefix=/home/ec2-user/lambda/local --openssldir=/home/ec2-user/lambda/local/openssl
     make
     make install
     cd ..
 
+Download and build curl. GDAL support of direct access to AWS S3 buckets requires the curl library. *Note: at the completion of the configure set please ensure HTTPS is included in the list of supported protocols.*
 
+    wget https://curl.haxx.se/download/curl-7.55.0.tar.gz
+    tar xvf curl-7.55.0.tar.gz
+    cd curl-7.55.0
+    ./configure --prefix=/home/ec2-user/lambda/local --with-ssl=/home/ec2-user/lambda/local --disable-shared
+    make
+    make install
+    cd ..
+
+Download and build zlib. zlib is a compression library used by HDF5.
+
+    wget https://zlib.net/zlib-1.2.11.tar.gz
+    tar xvf zlib-1.2.11.tar.gz
+    cd zlib-1.2.11
+    ./configure --prefix=/home/ec2-user/lambda/local/ --static
+    make
+    make install
+    cd ..
+
+Download and build HDF5 lib. HDF5 is the file format used by NetCDF and is a dependency of the NetCDF library.
+
+    wget https://support.hdfgroup.org/ftp/HDF5/current18/src/hdf5-1.8.19.tar
+    tar xvf hdf5-1.8.19.tar
+    cd hdf5-1.8.19
+    ./configure --with-zlib=/home/ec2-user/lambda/local/ --prefix=/home/ec2-user/lambda/local/ --disable-shared
+    make
+    make install
+    cd ..
+    
+    
+    
 
 
