@@ -20,6 +20,10 @@ Make directory to store GDAL Build and dependencies
 
     mkdir gdalbuild; cd gdalbuild
 
+Set CFLAGS to generate position independent code (support creation of static libs)
+
+    export CFLAGS="-fPIC"
+
 Download and build proj.4
 
     wget https://github.com/OSGeo/proj.4/archive/4.9.3.tar.gz
@@ -36,7 +40,7 @@ Download and build OpenSSL. This is used to provide SSL/HTTPS support in the cur
     wget https://www.openssl.org/source/openssl-1.0.2l.tar.gz
     tar xvf openssl-1.0.2l.tar.gz
     cd openssl-1.0.2l
-    ./config  --prefix=/home/ec2-user/lambda/local --openssldir=/home/ec2-user/lambda/local/openssl
+    ./config -fPIC --prefix=/home/ec2-user/lambda/local --openssldir=/home/ec2-user/lambda/local/openssl
     make
     make install
     cd ..
@@ -56,7 +60,7 @@ Download and build zlib. zlib is a compression library used by HDF5.
     wget https://zlib.net/zlib-1.2.11.tar.gz
     tar xvf zlib-1.2.11.tar.gz
     cd zlib-1.2.11
-    ./configure --prefix=/home/ec2-user/lambda/local/ --static
+    ./configure --prefix=/home/ec2-user/lambda/local/
     make
     make install
     cd ..
@@ -71,7 +75,65 @@ Download and build HDF5 lib. HDF5 is the file format used by NetCDF and is a dep
     make install
     cd ..
     
-    
-    
+Download and build NetCDF.
+
+    wget https://github.com/Unidata/netcdf-c/archive/v4.4.1.1.zip
+    unzip v4.4.1.1.zip
+    cd netcdf-c-4.4.1.1
+    CPPFLAGS=-I/home/ec2-user/lambda/local/include/ LDFLAGS=-L/home/ec2-user/lambda/local/lib \
+        ./configure --enable-netcdf-4 --prefix=/home/ec2-user/lambda/local
+    make
+    make install
+    cd ..
+
+Download and build GDAL.
+
+    wget http://download.osgeo.org/gdal/2.2.1/gdal-2.2.1.tar.gz
+    tar -xvf gdal-2.2.1.tar.gz
+    cd gdal-2.2.1
+    CPPFLAGS=-I/home/ec2-user/lambda/local/include/ \
+        LDFLAGS=-L/home/ec2-user/lambda/local/lib \
+        PATH=$PATH:/home/ec2-user/lambda/local/bin \
+        ./configure --with-curl=/home/ec2-user/lambda/local \
+                    --with-hdf5=/home/ec2-user/lambda/local \
+                    --prefix=/home/ec2-user/lambda/local \
+                    --with-java=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.141.x86_64 \
+                    --with-jvm-lib=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.141.x86_64/jre/lib/amd64/server \
+                    --with-jvm-lib-add-rpath=yes \
+                    --with-java=yes \
+                    --with-static-proj4=/home/ec2-user/lambda/local
+    make
+    make install
+    cd ..
+
+Build the GDAL Java SWIG wrappers (libgdaljni.lib, gdal.jar)
+    cd gdal-2.2.1/swig/java/
+    make
+    make install
+    cd ../../../
+
+# Verification
+Where possible the above build steps generate static libraries that have no dependencies. Lib dependencies can be checked using the `ldd` tool.
+
+    ldd ../lambda/local/lib/libgdal.so
+
+Outputs
+<pre>
+linux-vdso.so.1 =>  (0x00007ffeeed77000)
+<b>libproj.so.12</b> => /home/ec2-user/lambda/local/lib/libproj.so.12 (0x00007fadc3ca7000)
+<b>libnetcdf.so.11</b> => /home/ec2-user/lambda/local/lib/libnetcdf.so.11 (0x00007fadc3690000)
+libjpeg.so.62 => /usr/lib64/libjpeg.so.62 (0x00007fadc3437000)
+libpthread.so.0 => /lib64/libpthread.so.0 (0x00007fadc321b000)
+librt.so.1 => /lib64/librt.so.1 (0x00007fadc3012000)
+libdl.so.2 => /lib64/libdl.so.2 (0x00007fadc2e0e000)
+libz.so.1 => /home/ec2-user/lambda/local/lib/libz.so.1 (0x00007fadc2bf1000)
+libstdc++.so.6 => /usr/lib64/libstdc++.so.6 (0x00007fadc28eb000)
+libm.so.6 => /lib64/libm.so.6 (0x00007fadc25e9000)
+libc.so.6 => /lib64/libc.so.6 (0x00007fadc2225000)
+libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007fadc200e000)
+/lib64/ld-linux-x86-64.so.2 (0x0000556d61151000)
+</pre>
+
+From this we can see the `libgdal.so` library is dependent on `libproj.so.12` and `libnetcdf.so.11`, hence all these files must be included in the bundle deployed to Lambda.
 
 
