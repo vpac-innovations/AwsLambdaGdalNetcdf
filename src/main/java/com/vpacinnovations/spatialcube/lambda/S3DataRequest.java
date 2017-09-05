@@ -8,6 +8,11 @@ public class S3DataRequest {
 
     }
 
+    public S3DataRequest(String bucket, String key) {
+        this.s3Bucket = bucket;
+        this.s3Key = key;
+    }
+
     public String getS3Bucket() {
         return s3Bucket;
     }

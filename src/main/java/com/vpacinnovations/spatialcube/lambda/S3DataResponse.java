@@ -5,6 +5,12 @@ public class S3DataResponse {
     double minimum;
     boolean success;
 
+    public S3DataResponse() {
+        this.maximum = 0;
+        this.minimum = 0;
+        this.success = false;
+    }
+
     public S3DataResponse(double[] minmax) {
         if (minmax == null) {
             success = false;

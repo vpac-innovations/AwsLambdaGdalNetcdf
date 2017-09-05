@@ -7,7 +7,8 @@ repositories {
 dependencies {
     compile (
         'com.amazonaws:aws-lambda-java-core:1.1.0',
-        'com.amazonaws:aws-lambda-java-events:1.1.0'
+        'com.amazonaws:aws-lambda-java-events:1.1.0',
+        'com.amazonaws:aws-java-sdk-lambda:1.11.188'
     )
     compile fileTree(dir: 'jars', include: '*.jar')
 }
@@ -21,6 +22,12 @@ task buildZip(type: Zip) {
     into('lib') {
         from 'lib'
     }
+}
+
+task runInvoker(type: JavaExec) {
+  classpath sourceSets.main.runtimeClasspath
+  main = "com.vpacinnovations.spatialcube.lambda.GdalInvoker"
+  args "arg1", "arg2"
 }
 
 build.dependsOn buildZip
