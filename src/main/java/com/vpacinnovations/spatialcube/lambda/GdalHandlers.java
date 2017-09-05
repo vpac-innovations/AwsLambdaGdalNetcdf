@@ -96,11 +96,10 @@ public class GdalHandlers implements RequestHandler<S3DataRequest, S3DataRespons
         //unfortunately this seems to not work in the Lambda environment. Hence the
         //native libraries requried by gdal.jar are loaded as follows.
         //Requires more investigation...
-        System.load("/var/task/lib/libhdf5.so.10");
-        System.load("/var/task/lib/libhdf5_hl.so.10");
+        System.load("/var/task/lib/libproj.so.12");
         System.load("/var/task/lib/libnetcdf.so.11");
         System.load("/var/task/lib/libproj.so.12");
-        System.load("/var/task/lib/libgdal.so");
+        System.load("/var/task/lib/libgdal.so.20");
         System.load("/var/task/lib/libgdaljni.so");
         gdal.AllRegister();
 
