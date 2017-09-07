@@ -1,14 +1,14 @@
 package com.vpacinnovations.spatialcube.lambda;
 
-public class S3DataRequest {
+public class GdalS3DataRequest {
     String s3Bucket;
     String s3Key;
 
-    public S3DataRequest() {
+    public GdalS3DataRequest() {
 
     }
 
-    public S3DataRequest(String bucket, String key) {
+    public GdalS3DataRequest(String bucket, String key) {
         this.s3Bucket = bucket;
         this.s3Key = key;
     }

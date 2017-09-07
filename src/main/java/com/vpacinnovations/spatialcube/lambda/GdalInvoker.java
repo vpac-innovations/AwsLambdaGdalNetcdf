@@ -39,7 +39,7 @@ public class GdalInvoker{
         AWSLambdaAsync client = 
             AWSLambdaAsyncClientBuilder.standard().withCredentials(cp).build();
 
-        S3DataRequest input = new S3DataRequest(
+        GdalS3DataRequest input = new GdalS3DataRequest(
             "lambda-geospatial-test-data",
             "road-network/RoadNetwork_tile_x9_y23.nc");
 

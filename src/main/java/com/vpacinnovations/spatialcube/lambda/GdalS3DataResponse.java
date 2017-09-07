@@ -1,17 +1,17 @@
 package com.vpacinnovations.spatialcube.lambda;
 
-public class S3DataResponse {
+public class GdalS3DataResponse {
     double maximum;
     double minimum;
     boolean success;
 
-    public S3DataResponse() {
+    public GdalS3DataResponse() {
         this.maximum = 0;
         this.minimum = 0;
         this.success = false;
     }
 
-    public S3DataResponse(double[] minmax) {
+    public GdalS3DataResponse(double[] minmax) {
         if (minmax == null) {
             success = false;
         } else {

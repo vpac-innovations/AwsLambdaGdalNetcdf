@@ -26,10 +26,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.vpacinnovations.spatialcube.lambda.S3DataRequest;
-import com.vpacinnovations.spatialcube.lambda.S3DataResponse;
 
-public class GdalHandlers implements RequestHandler<S3DataRequest, S3DataResponse> {
+public class GdalHandlers implements RequestHandler<GdalS3DataRequest, GdalS3DataResponse> {
 
     private LambdaLogger logger;
 
@@ -87,7 +85,7 @@ public class GdalHandlers implements RequestHandler<S3DataRequest, S3DataRespons
         return localFilename;
     }
 
-    public S3DataResponse handleRequest(S3DataRequest request, Context context) {
+    public GdalS3DataResponse handleRequest(GdalS3DataRequest request, Context context) {
         logger = context.getLogger();
         logger.log("received S3Bucket: " + request.getS3Bucket());
         logger.log("received S3Key: " + request.getS3Key());
@@ -137,7 +135,7 @@ public class GdalHandlers implements RequestHandler<S3DataRequest, S3DataRespons
 
         //minmax will remain null if the min/max fail to compute. The S3DataResponse
         //class constructor sets a success flag based on whether a null value is passed in. 
-        return new S3DataResponse(minmax);
+        return new GdalS3DataResponse(minmax);
     }
 }
 
