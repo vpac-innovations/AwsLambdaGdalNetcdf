@@ -1,5 +1,7 @@
 package com.vpacinnovations.spatialcube.lambda;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.handlers.AsyncHandler;
@@ -7,8 +9,16 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaAsync;
 import com.amazonaws.services.lambda.AWSLambdaAsyncClientBuilder;
 import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
+import com.amazonaws.services.lambda.model.InvocationType;
 import com.amazonaws.services.lambda.model.InvokeRequest;
 import com.amazonaws.services.lambda.model.InvokeResult;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,27 +44,46 @@ public class GdalInvoker{
         }
     }
 
-    private static List<GdalS3DataRequest> requestList() {
+    /**
+     * Method used the S3 API to request a list of all objects within a bucket.
+     * From this it builds a list of request objects.
+     * @param bucketName name of the S3 bucket
+     * @return a list of all objects (as GdalS3DataRequest's) within a S3 bucket. 
+     **/
+    private static List<GdalS3DataRequest> requestList(String bucketName) 
+        throws AmazonServiceException, AmazonClientException{
+
         List<GdalS3DataRequest> res = new ArrayList<GdalS3DataRequest>();
-        res.add(new GdalS3DataRequest(
-            "lambda-geospatial-test-data",
-            "road-network/RoadNetwork_tile_x9_y21.nc"));
-        res.add(new GdalS3DataRequest(
-            "lambda-geospatial-test-data",
-            "road-network/RoadNetwork_tile_x9_y22.nc"));
-        res.add(new GdalS3DataRequest(
-            "lambda-geospatial-test-data",
-            "road-network/RoadNetwork_tile_x9_y23.nc"));
+
+        AmazonS3 s3Client = new AmazonS3Client(new EnvironmentVariableCredentialsProvider());
+        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucketName);
+        ListObjectsV2Result result;
+
+        do {
+            result = s3Client.listObjectsV2(req);
+            result.setMaxKeys(20);
+            for (S3ObjectSummary objectSummary: result.getObjectSummaries()) {
+                GdalS3DataRequest dr = new GdalS3DataRequest(bucketName, 
+                    objectSummary.getKey());
+                res.add(dr);
+            }
+        } while (result.isTruncated() == true);
+
+        //return res.subList(0,10); //for testing and cost reduction during dev
         return res;
     }
 
-    public static void main(String[] args) throws JsonProcessingException{
-        AWSCredentialsProvider cp = new EnvironmentVariableCredentialsProvider();
+    public static void main(String[] args) throws JsonProcessingException, 
+            AmazonServiceException, AmazonClientException {
+        
+        System.out.println("Processing bucket " + args[0]);
 
+        AWSCredentialsProvider cp = new EnvironmentVariableCredentialsProvider();
         AWSLambdaAsync client = 
             AWSLambdaAsyncClientBuilder.standard().withCredentials(cp).build();
 
-        List<GdalS3DataRequest> gdalDataRequests = requestList();
+        List<GdalS3DataRequest> gdalDataRequests;
+        gdalDataRequests = requestList(args[0]);
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -70,7 +99,7 @@ public class GdalInvoker{
             futures.add(future_res);
         }
 
-        System.out.print("Waiting for async callback");
+        System.out.print("Waiting for async callbacks...");
         boolean allFuturesDone = false;
         while (!allFuturesDone) {
             int completeCount = 0;
@@ -83,7 +112,7 @@ public class GdalInvoker{
             allFuturesDone = completeCount == futures.size();
             System.out.format("%d/%d%n",completeCount,futures.size());
             try {
-                Thread.sleep(100);
+                Thread.sleep(500);
             }
             catch (InterruptedException e) {
                 System.err.println("Thread.sleep() was interrupted!");

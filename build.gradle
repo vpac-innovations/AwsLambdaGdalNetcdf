@@ -26,9 +26,11 @@ task buildZip(type: Zip) {
 }
 
 task runInvoker(type: JavaExec) {
-  classpath sourceSets.main.runtimeClasspath
-  main = "com.vpacinnovations.spatialcube.lambda.GdalInvoker"
-  args "arg1", "arg2"
+    if (project.hasProperty("bucket")) {
+        classpath sourceSets.main.runtimeClasspath
+        main = "com.vpacinnovations.spatialcube.lambda.GdalInvoker"
+        args project.getProperty('bucket')
+    }
 }
 
 build.dependsOn buildZip
