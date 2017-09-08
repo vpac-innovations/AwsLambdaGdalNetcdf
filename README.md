@@ -67,6 +67,32 @@ If all goes according to plan you should see a block of JSON output to `output.j
         "success":true
     }
 
+# Batch invocation
+
+The main method in `GdalInvoker` accepts a bucket name, the class will request a list of all keys within this bucket and launch one lambda request for each key. *Note: careful pointing this at buckets containing a large number of objects*
+
+A batch invocation can be launched via gradle, eg;
+
+    gradle run -Pbucket=lambda-geospatial-test-data
 
 # Notes
+
+## Performance
+The test data used in development was a road network proximity NetCDF file, approximately 5GB in size.
+
+Across a 3 runs `gdalinfo` required on average **341 seconds** to extract the minimum and maximum values from the 5GB file.
+
+The single NetCDF file was tiled into 982 smaller NetCDF files and uploaded into an S3 bucket. Using the batch invocation above Lambda+GDAL was able to extract the minimum and maximum values within **18 seconds**.
+
+The Lambda based process includes a number of overheads not encountered by `gdalinfo`, this includes listing the contents of the S3 bucket before the Lambda function calls are made, and each Lambda function also copies the file from S3 to the Lambda functions temp storage before processing. It's expected JVM startup, and loading of the GDAL native libs would add somewhat to execution time. No attempt has been made to optimise tile size, it's expected some improvements could be made here.
+
+All things considered, including this somewhat contrived use case, the performance numbers show there's some good potential here.
+
+## Implementation
+The `gdal.registerAll()` call would result in a unsatisfied link error despite setting both `PATH` and `LD_LIBRARY_PATH` lambda environment variables to the location the gdal libs are unzipped too. Hardcoding the full path to each of the required libraries, and loading them via `System.load()` worked around this issue.
+
+Some GDAL drivers support reading of S3 based data directly, this would allow the Lambda function to skip the process of copying the file locally. Unfortunately the NetCDF driver does not offer this support, [more details here](https://trac.osgeo.org/gdal/ticket/6997).
+
+
+
 
